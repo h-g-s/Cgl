@@ -2947,6 +2947,7 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface & model,
       if (debugger) 
 	assert(returnModel->getRowCutDebugger());
 #endif
+  returnModel->preprocess = this;
   return returnModel;
 }
 
