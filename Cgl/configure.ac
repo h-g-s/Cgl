@@ -138,6 +138,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Makefile
                  src/Makefile
                  src/CglAllDifferent/Makefile
+                 src/CglAggressiveClique/Makefile
                  src/CglClique/Makefile
                  src/CglDuplicateRow/Makefile
                  src/CglFlowCover/Makefile

@@ -34,6 +34,10 @@ static int whichMps=0;
 char nameMps[50];
 #endif
 
+/*----------SAMUEL_BRITO----------*/
+#include "build_cgraph.h"
+/*-------------------------------*/
+
 OsiSolverInterface *
 CglPreProcess::preProcess(OsiSolverInterface & model, 
                        bool makeEquality, int numberPasses)
@@ -2948,8 +2952,48 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface & model,
       if (debugger) 
 	assert(returnModel->getRowCutDebugger());
 #endif
-  if (returnModel!=NULL)
-      returnModel->preprocess = this;
+
+  if(!returnModel) {
+		return NULL;
+  }
+  
+  returnModel->preprocess = this;
+
+  /*----------SAMUEL_BRITO----------*/
+  if(!returnModel->isPerformingHeuristics() && model.useCG()) {
+		const CGraph *currCG = model.getCGraph();
+		if(!currCG) {
+			double startCG = CoinCpuTime();
+			CGraph *cg = build_cgraph(returnModel->getMatrixByRow(), returnModel->getNumCols(),
+									  returnModel->getColType(), returnModel->getRightHandSide(),
+								 	  returnModel->getRowSense());
+			returnModel->setCGraph(cg);
+			OsiSolverInterface::cgTime += (CoinCpuTime() - startCG);
+			OsiSolverInterface::countCG++;
+		} else {
+			const int cgSize = cgraph_size(currCG);
+			const int newNumCols = returnModel->getNumCols();
+			const int oldNumCols = cgSize / 2;
+
+			if(cgSize % 2) {
+				fprintf(stderr, "Invalid size of cgraph %d (%s line %d)\n", cgSize, __FILE__, __LINE__);
+				exit(EXIT_FAILURE);
+			}
+
+			if(newNumCols != oldNumCols) {
+				double startCG = CoinCpuTime();
+				CGraph *cg = build_cgraph(returnModel->getMatrixByRow(), returnModel->getNumCols(),
+										  returnModel->getColType(), returnModel->getRightHandSide(),
+										  returnModel->getRowSense());
+				returnModel->setCGraph(cg);
+				OsiSolverInterface::cgTime += (CoinCpuTime() - startCG);
+				OsiSolverInterface::countCG++;
+			}
+		}
+	}
+	/*-------------------------------*/
+
+
   return returnModel;
 }
 
