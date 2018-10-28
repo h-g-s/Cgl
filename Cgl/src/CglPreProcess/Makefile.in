@@ -57,7 +57,7 @@ CONFIG_HEADER = $(top_builddir)/src/config.h \
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libCglPreProcess_la_LIBADD =
-am_libCglPreProcess_la_OBJECTS = CglPreProcess.lo
+am_libCglPreProcess_la_OBJECTS = CglPreProcess.lo clique_merge.lo
 libCglPreProcess_la_OBJECTS = $(am_libCglPreProcess_la_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -357,7 +357,9 @@ AUTOMAKE_OPTIONS = foreign
 noinst_LTLIBRARIES = libCglPreProcess.la
 
 # List all source files for this library, including headers
-libCglPreProcess_la_SOURCES = CglPreProcess.cpp CglPreProcess.hpp
+libCglPreProcess_la_SOURCES = CglPreProcess.cpp CglPreProcess.hpp \
+			      clique_merge.cpp clique_merge.h
+
 
 # This is for libtool (on Windows)
 libCglPreProcess_la_LDFLAGS = $(LT_LDFLAGS)
@@ -435,6 +437,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CglPreProcess.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clique_merge.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

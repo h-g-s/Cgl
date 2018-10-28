@@ -17,7 +17,8 @@ AUTOMAKE_OPTIONS = foreign
 noinst_LTLIBRARIES = libCglPreProcess.la
 
 # List all source files for this library, including headers
-libCglPreProcess_la_SOURCES = CglPreProcess.cpp CglPreProcess.hpp
+libCglPreProcess_la_SOURCES = CglPreProcess.cpp CglPreProcess.hpp \
+			      clique_merge.cpp clique_merge.h
 
 # This is for libtool (on Windows)
 libCglPreProcess_la_LDFLAGS = $(LT_LDFLAGS)
