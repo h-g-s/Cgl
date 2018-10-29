@@ -41,7 +41,7 @@ public:
         int size = strlen(name);
         charSpace.insert( charSpace.end(), name, name+size );
         charSpace.push_back('\0');
-        starts.push_back( *starts.rbegin()+size+1 );
+        starts.push_back( (*starts.rbegin())+size+1 );
     }
 
     // should be called because using **
@@ -95,7 +95,7 @@ public:
         assert( line >= 0 && line<(int)nzs.size() );
         if (nzs[line] == 0)
             return NULL;
-        return &elements[starts[line]];
+        return &(elements[starts[line]]);
     }
 
     int nz( int line ) const {
@@ -111,7 +111,7 @@ private:
 
 #define MAX_SIZE_CLIQUE_TO_BE_EXTENDED 256
 
-// global configurations and stats
+// global configurations and execution stats
 int clqMergeVerbose = 1;
 double clqMergeSecsCheckClique = 0.0;
 double clqMergeSecsExtendAndDominate = 0.0;
@@ -121,16 +121,14 @@ int clqMergeNExtended = 0;
 int clqMergeNDominatedFull = 0;
 int clqMergeNDominatedEqPart = 0;
 
-static void *xmalloc( const size_t size );
-static void *xcalloc( const size_t elements, const size_t size );
+/* helper functions and macros */
 static void *xrealloc( void *ptr, const size_t size );
 
 /* fills from start until the last element before end */
 #define FILL( vector, start, end, value ) { \
     int i; \
     for ( i=start ; (i<end) ; ++i ) vector[i] = value; \
-} \
-
+}
 
 /* allocate filling with zeros */
 #define ALLOCATE_VECTOR_INI( ptr, type, nElements ) {\
@@ -146,7 +144,6 @@ static void *xrealloc( void *ptr, const size_t size );
        fprintf( stderr, "ERROR: no more memory available. at: %s:%d\n", __FILE__, __LINE__ ); \
        abort(); \
     }; }
-
 
 static char dominates( int nClq1, const int clq1[], int nClq2, const int clq2[], char *iv )
 {
@@ -173,7 +170,6 @@ static char dominates( int nClq1, const int clq1[], int nClq2, const int clq2[],
         }
     }
 
-
     // clearing iv
     for ( int i=0 ; (i<nClq1) ; ++i )
         iv[clq1[i]] = false;
@@ -182,10 +178,10 @@ static char dominates( int nClq1, const int clq1[], int nClq2, const int clq2[],
 
 static void add_clique(
         OsiSolverInterface *mip,
-        CliqueSet *newCliques,      // new cliques
-        int size, const int el[],  // clique being added
+        CliqueSet *newCliques,    // new cliques
+        int size, const int el[], // clique being added
         vector< enum CliqueType > &cliqueState,  // which are the clique rows and their state
-        const SpsMtx &origClqs,
+        const SpsMtx &origClqs,  // original cliques
         char *iv, // temporary incidence vector
         char *ivrt, // temporary incidence vector
         int *rtc, // list of rows checked
@@ -195,13 +191,9 @@ static void add_clique(
 {
 #ifdef DEBUG
     for ( int i=0 ; (i<mip->getNumCols()) ; ++i )
-    {
         assert( iv[i] == false );
-    }
     for ( int i=0 ; (i<mip->getNumRows()) ; ++i )
-    {
         assert( ivrt[i] == false );
-    }
 #endif
 
     int add = 0;
@@ -211,12 +203,13 @@ static void add_clique(
     add = nc2-nc1;
 
     assert(nc2>=nc1);
-    if (add==0)
+    if (add==0)   // ignoring repeated cliques
         return;
         
-    int minColClq = INT_MAX;
-    int maxColClq = INT_MIN;
-
+    int minColClq = INT_MAX, maxColClq = INT_MIN;
+    
+    // checking which rows should be checked considering 
+    // columns that appear on this clique
     int nrtc = 0;
     for ( int i=0 ; (i<size) ; ++i )
     {
@@ -237,7 +230,6 @@ static void add_clique(
 #ifdef DEBUG
             assert( cliqueState[ir]!=NotAClique );
 #endif
-            
             // skipping already dominated, already included or larger rows (cannot be dominated by this one )
             if ( cliqueState[ir]==Dominated || ivrt[ir] || origClqs.nz(ir)>size )
                 continue;
@@ -279,16 +271,10 @@ static void add_clique(
  
 }
 
-static int cmp_int( const void *v1, const void *v2 )
-{
-    const int *i1 = (const int *) v1;
-    const int *i2 = (const int *) v2;
-
-    return (*i1)-(*i2);
-}
-
-/* detect cliques */
-static int check_cliques( 
+/* detect cliques, including those involving
+ * complimentary variables and stores those cliques
+ * in origClqs */
+static int detect_cliques( 
         OsiSolverInterface *mip, 
         vector< enum CliqueType > &cliqueState,
         vector< int > &cliques, 
@@ -310,20 +296,19 @@ static int check_cliques(
     int rows = mip->getNumRows();
     int nCliques = 0;
 
-    int minClqSize = INT_MAX;
-    int maxClqSize = 0;
+    int minClqSize = INT_MAX, maxClqSize = INT_MIN;
     double avClgSize = 0.0;
 
     for ( int i=0 ; (i<rows) ; ++i )
     {
         int nz = cpmRow->getVectorLengths()[i];
-        if ( nz<=1 || nz>MAX_SIZE_CLIQUE_TO_BE_EXTENDED )
+        const char sense = Asense[i];
+        if ( nz<=1 || nz>MAX_SIZE_CLIQUE_TO_BE_EXTENDED || sense=='R' )
             continue;
 
         const int *idx = cpmRow->getIndices() + starts[i];
         const double *coef = cpmRow->getElements() + starts[i];
 
-        const char sense = Asense[i];
         double rhs = Arhs[i];
         // all constraints as <=
         double mult = (sense == 'G') ? -1.0 : 1.0;
@@ -343,17 +328,19 @@ static int check_cliques(
                 break;
             }
 
+            const double realCoef = mult*coef[j];
+
             // binaries, checking for original and complimentary variables
             if ( colLB[idx[j]] >= -1e-8 && colUB[idx[j]] <= 1.0+1e-8 )
             {
-                if ( fabs(mult*coef[j]-1.0)<=1e-8 ) 
+                if ( fabs(realCoef-1.0)<=1e-8 ) 
                     ++nOnes;
                 else
-                    if ( fabs(mult*coef[j]+1.0)<=1e-8 )
+                    if ( fabs(realCoef+1.0)<=1e-8 )
                         ++nMinusOne;
             }
 
-            minCoef = min( mult * coef[j], minCoef );
+            minCoef = min( realCoef, minCoef );
         }
 
         if (!varsOk)
@@ -386,7 +373,7 @@ static int check_cliques(
                     if (coef[j]<-1e-8)
                         cidx[j] += mip->getNumCols();
 
-                origClqs.addRow( i, nz, &cidx[0], true );
+                origClqs.addRow( i, nz, &(cidx[0]), true );
 
                 minClqSize = min( minClqSize, nz );
                 maxClqSize = max( maxClqSize, nz );
@@ -398,9 +385,7 @@ static int check_cliques(
         {
             printf( "\trow %s: ", mip->getRowName(i).c_str() );
             for ( int j=0 ; (j<nz) ; ++j )
-            {
                 printf(" %+g %s ", coef[j], mip->getColName(idx[j]).c_str() );
-            }
             char strSense[3] = "";
             switch (sense)
             {
@@ -435,19 +420,25 @@ static int check_cliques(
 }
 
 /* to sort cliques per size */
-struct CliqueSize
+class CliqueSize
 {
+public:
+    CliqueSize() : clqIdx(0), size(0) {}
+    CliqueSize( int clqIdx_, int size_ ) :
+        clqIdx( clqIdx_ ), size( size_ ) {}
+
     int clqIdx;
     int size;
+
+    bool operator < ( const CliqueSize &other ) const {
+        return other.size < this->size;
+    }
+    CliqueSize &operator = ( const CliqueSize &other ) {
+        this->clqIdx = other.clqIdx;
+        this->size = other.size;
+        return *this;
+    }
 };
-
-static int cmp_clq_size( const void *v1, const void *v2 )
-{
-    const struct CliqueSize *cs1 = (const struct CliqueSize *) v1;
-    const struct CliqueSize *cs2 = (const struct CliqueSize *) v2;
-
-    return cs2->size-cs1->size;
-}
 
 void addRow( 
         int *nrRows, int *nrCapRows, int *nrNz, int *nrCapNz, int **nrStart, 
@@ -497,7 +488,6 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
     const CoinPackedMatrix *cpmRow =  mip->getMatrixByRow();
     const CoinBigIndex *starts = cpmRow->getVectorStarts();
     const double *Arhs = mip->getRightHandSide();
-    const char *Asense = mip->getRowSense();
     //const double *colLB = mip->getColLower();
     //const double *colUB = mip->getColUpper();
     clock_t startExtend = clock(); // 
@@ -534,11 +524,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
 
     int *rtc = new int[mip->getNumRows()];       // rows to check per thread
 
-    int clqSizeCapIni = 4096;
-    struct CliqueSize *clqsSize = NULL; // to sort per clique size
-    ALLOCATE_VECTOR( clqsSize, struct CliqueSize, clqSizeCapIni );
-    int clqSizeCap = clqSizeCapIni; // current capacity in number of cliques for each thread
-
+    vector< CliqueSize > clqsSize;
 
     VecNames clqNames;
 
@@ -556,7 +542,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
     /* row names */
     VecNames rowNames;
 
-    const int nCliques = check_cliques( mip, cliqueState, cliques, origClqs );
+    const int nCliques = detect_cliques( mip, cliqueState, cliques, origClqs );
     if ( nCliques == 0 )
         goto TERMINATE;
 
@@ -657,7 +643,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                     ++clqMergeNExtended;
 
                     // to sort cliques found per size
-                    struct CliqueSize *clqbs = clqsSize;
+                    clqsSize.clear();
 
                     const CliqueSet *clqs = clqe_get_cliques( clqe );
                     assert(clq_set_number_of_cliques(clqs)>=1);
@@ -668,33 +654,21 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                         cliqueState[row] = Dominated;
                         if (nCliquesToInsert==1)
                         {
-                            clqbs[0].clqIdx = 0;
-                            clqbs[0].size = clq_set_clique_size( clqs, 0 );
+                            clqsSize.push_back( CliqueSize( 0, clq_set_clique_size( clqs, 0 ) ) );
                         }
                         else
                         {
-                            /* resize */
-                            if (clq_set_number_of_cliques(clqs)>clqSizeCap)
-                            {
-                                clqSizeCap = max( clqSizeCap*2, clq_set_number_of_cliques(clqs) );
-                                clqbs = clqsSize = (CliqueSize*) xrealloc( clqsSize, sizeof(struct CliqueSize)*clqSizeCap );
-                            }
-                            /* sorting per size */
                             for ( int ic=0 ; (ic<clq_set_number_of_cliques(clqs)) ; ++ic )
-                            {
-                                clqbs[ic].clqIdx = ic;
-                                clqbs[ic].size = clq_set_clique_size( clqs, ic );
-                            }
-                            /* maybe needed to sort cliques */
+                                clqsSize.push_back( CliqueSize( ic, clq_set_clique_size( clqs, ic ) ) );
 
-                            qsort( clqbs, clq_set_number_of_cliques(clqs), sizeof(struct CliqueSize), cmp_clq_size );
-                            //printf( "from %d to %d\n", clqbs[0].size, clqbs[clq_set_number_of_cliques(clqs)-1].size );
+                            sort( clqsSize.begin(), clqsSize.end() );
+                            assert( clqsSize[0].size >= clqsSize[1].size );
                         }
                     }
 
                     for ( int ic=0 ; (ic<nCliquesToInsert) ; ++ic )
                     {
-                        int idxclique = clqbs[ic].clqIdx;
+                        int idxclique = clqsSize[ic].clqIdx;
                         int size = clq_set_clique_size( clqs, idxclique );
                         //printf("   adding %d\n", size );
                         const int *el = clq_set_clique_elements( clqs, idxclique );
@@ -863,8 +837,6 @@ TERMINATE:
     delete[] idx;
     delete[] coef;
 
-    free( clqsSize );
-
     clq_set_free( &newCliques );
 
     delete[] iv;
@@ -877,30 +849,6 @@ TERMINATE:
         free(allCollClqs);
     if (colClqs)
         free( colClqs);
-}
-
-static void *xmalloc( const size_t size )
-{
-   void *result = malloc( size );
-   if (!result)
-   {
-      fprintf(stderr, "No more memory available. Trying to allocate %zu bytes.", size);
-      exit(1);
-   }
-
-   return result;
-}
-
-static void *xcalloc( const size_t elements, const size_t size )
-{
-   void *result = calloc( elements, size );
-   if (!result)
-   {
-      fprintf(stderr, "No more memory available. Trying to callocte %zu bytes.", size);
-      exit(1);
-   }
-
-   return result;
 }
 
 static void *xrealloc( void *ptr, const size_t size )
