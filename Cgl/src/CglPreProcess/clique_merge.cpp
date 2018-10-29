@@ -24,54 +24,6 @@ enum CliqueType
 
 using namespace std;
 
-class VecNames
-{
-public:
-    VecNames() {
-        starts.reserve(8192);
-        charSpace.reserve(8192*61);
-        starts.push_back( 0 );
-    }
-
-    const char *getName( int i ) {
-        return &(charSpace[starts[i]]);
-    }
-
-    void add( const char *name ) {
-        int size = strlen(name);
-        charSpace.insert( charSpace.end(), name, name+size );
-        charSpace.push_back('\0');
-        starts.push_back( (*starts.rbegin())+size+1 );
-    }
-
-    // should be called because using **
-    void updateLines() {
-        int nLines = starts.size()-1;
-        if (lines) {
-            delete[] lines;
-            lines = new char*[nLines];
-        }
-        lines = new char*[nLines];
-        for ( int i=0 ; (i<nLines) ; ++i )
-            lines[i] = &(charSpace[starts[i]]);
-    }
-
-    // returns structure as char ** 
-    char ** ptr() { 
-        assert(lines);
-        return lines; 
-    }
-
-    virtual ~VecNames() {
-        if (lines)
-            delete[] lines;
-    }
-private:
-    vector< char > charSpace;
-    vector< int > starts;
-    char **lines;
-};
-
 // simple sparse matrix
 class SpsMtx {
 public:
@@ -121,8 +73,6 @@ int clqMergeNExtended = 0;
 int clqMergeNDominatedFull = 0;
 int clqMergeNDominatedEqPart = 0;
 
-/* helper functions and macros */
-static void *xrealloc( void *ptr, const size_t size );
 
 /* fills from start until the last element before end */
 #define FILL( vector, start, end, value ) { \
@@ -218,7 +168,7 @@ static void add_clique(
         minColClq = min( minColClq, col );
         maxColClq = max( maxColClq, col );
         
-        if (col >= mip->getNumCols()) // complimetary variable
+        if (col >= mip->getNumCols()) // complimentary variable
             col -= mip->getNumCols();
 #ifdef DEBUG            
         assert( col >= 0 && col<mip->getNumCols() );
@@ -286,6 +236,7 @@ static int detect_cliques(
     const char *Asense = mip->getRowSense();
     const double *colLB = mip->getColLower();
     const double *colUB = mip->getColUpper();
+    cliques.clear();
     
     // used to fix column indexes
     vector< int > cidx( mip->getNumCols() );
@@ -351,7 +302,7 @@ static int detect_cliques(
 
         if (cliqueState[i]==NotDominated)
         {
-            cliques[nCliques++] = i;
+            cliques.push_back( i );
 
             origClqs.addRow( i, nz, idx, true );
 
@@ -366,8 +317,8 @@ static int detect_cliques(
             {
                 memcpy( &(cidx[0]), idx, sizeof(int)*nz );
                 cliqueState[i]=NotDominated;
-                
-                cliques[nCliques++] = i;
+ 
+                cliques.push_back( i );
 
                 for ( int j=0 ; (j<nz) ; ++j )
                     if (coef[j]<-1e-8)
@@ -416,7 +367,7 @@ static int detect_cliques(
     if (clqMergeVerbose>=1)
         printf("model checked in %.4f seconds. %d candidate cliques for extension/merging. clique sizes range:[%d...%d], av %.2f.\n", clqMergeSecsCheckClique, nCliques, minClqSize, maxClqSize, avClgSize/((double)nCliques) );
 
-    return nCliques;
+    return (int) cliques.size();
 }
 
 /* to sort cliques per size */
@@ -440,43 +391,20 @@ public:
     }
 };
 
-void addRow( 
-        int *nrRows, int *nrCapRows, int *nrNz, int *nrCapNz, int **nrStart, 
-        int **nrIdx, double **nrCoef, char **nrSense, double **nrRhs,
-        int nz, const int idx[], const double coef[], char sense, double rhs,
-        const char *rowName, 
-        VecNames &rowNames )
+static void addRow( 
+        vector< int > &nrStart, vector< int > &nrIdx,
+        vector< double > &nrCoef, vector< double > &nrLB,
+        vector< double > &nrUB,
+        int nz, const int idx[], const double coef[], double rlb, double rub,
+
+        const string &rowName, OsiSolverInterface::OsiNameVec &rowNames )
 {
-    if ( (*nrRows)+2 >= (*nrCapRows) )
-    {
-        (*nrCapRows) = max( 2*(*nrCapRows),  (*nrCapRows)+32 );
-
-        (*nrStart) = (int *) xrealloc( (*nrStart), sizeof(int)*((*nrCapRows)+1) );
-        (*nrSense) = (char*) xrealloc( (*nrSense), sizeof(char)*((*nrCapRows)) );
-        (*nrRhs) = (double *) xrealloc( (*nrRhs), sizeof(double)*(*nrCapRows) );
-    }
-
-    if ( ((*nrNz)+nz) >= (*nrCapNz))
-    {
-        (*nrCapNz) = max( (*nrCapNz)*2, ((*nrNz)+nz) );
-        (*nrIdx) = (int *) xrealloc( (*nrIdx), sizeof(int)*(*nrCapNz) );
-        (*nrCoef) = (double *) xrealloc( (*nrCoef), sizeof(double)*(*nrCapNz) );
-    }
-
-    /* adding */
-    int *pidx = (*nrIdx) + (*nrNz);
-    double *pcoef = (*nrCoef) + (*nrNz);
-    memcpy( pidx, idx, sizeof(int)*nz );
-    memcpy( pcoef, coef, sizeof(double)*nz );
-    (*nrSense)[(*nrRows)] = sense;
-    (*nrRhs)[(*nrRows)] = rhs;
-
-    (*nrStart)[(*nrRows)+1] = (*nrStart)[(*nrRows)] + nz;
-    (*nrNz) += nz;
-
-    rowNames.add( rowName );
-    
-    ++(*nrRows);
+    nrIdx.insert( nrIdx.end(), idx, idx+nz );
+    nrCoef.insert( nrCoef.end(), coef, coef+nz );
+    nrLB.push_back( rlb );
+    nrUB.push_back( rub );
+    nrStart.push_back( *(nrStart.rbegin())+nz );
+    rowNames.push_back( rowName );
 }
 
 /* tries to extend every clique in mip using
@@ -488,17 +416,15 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
     const CoinPackedMatrix *cpmRow =  mip->getMatrixByRow();
     const CoinBigIndex *starts = cpmRow->getVectorStarts();
     const double *Arhs = mip->getRightHandSide();
-    //const double *colLB = mip->getColLower();
-    //const double *colUB = mip->getColUpper();
-    clock_t startExtend = clock(); // 
+    clock_t startExtend;
   
-    double *rc = NULL;      // reduced costs (dummy values by now)
+    vector< double > rc( mip->getNumCols()*2, 1.0 );
 
-    int *idx = new int[mip->getNumCols()];        // temporary area
-    double *coef = new double[mip->getNumCols()]; // to get indexes from rows
-    
+    vector< int > idx( mip->getNumCols() );
+    vector< double > coef( mip->getNumCols() ) ;
+
     // list of rows which are cliques
-    vector< int > cliques( mip->getNumRows() ); 
+    vector< int > cliques; 
 
     // if it is a clique or not and if it is dominated
     vector< enum CliqueType > cliqueState( mip->getNumRows(), NotAClique );
@@ -526,21 +452,18 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
 
     vector< CliqueSize > clqsSize;
 
-    VecNames clqNames;
+    OsiSolverInterface::OsiNameVec clqNames;
 
     /* new rows */
-    int *nrStart = NULL;
-    int *nrIdx = NULL;
-    double *nrCoef = NULL;
-    double *nrRhs = NULL;
-    char *nrSense = NULL;
-    int nrRows = 0;
-    int nrNz = 0;
-    int nrCapRows = 0;
-    int nrCapNz = 0;
+    vector< int > nrStart;
+    nrStart.push_back( 0 );
+    vector< int > nrIdx;
+    vector< double > nrCoef;
+    vector< double > nrLB;
+    vector< double > nrUB;
     
     /* row names */
-    VecNames rowNames;
+    OsiSolverInterface::OsiNameVec rowNames;
 
     const int nCliques = detect_cliques( mip, cliqueState, cliques, origClqs );
     if ( nCliques == 0 )
@@ -591,20 +514,6 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
     }
 
 
-    nrCapRows = nCliques*min(maxExtensions,5) + 1024;
-    nrCapNz = mip->getNumElements() * 2;
-    ALLOCATE_VECTOR( nrStart, int, nrCapRows+1 );
-    ALLOCATE_VECTOR( nrIdx, int, nrCapNz );
-    ALLOCATE_VECTOR( nrCoef, double, nrCapNz );
-    ALLOCATE_VECTOR( nrRhs, double, nrCapRows );
-    ALLOCATE_VECTOR( nrSense, char, nrCapRows );
-    nrStart[0] = 0;
-
-    // just to fill parameter
-    ALLOCATE_VECTOR( rc, double, mip->getNumCols()*2 );
-    FILL( rc, 0, mip->getNumCols()*2, 1.0 );
-
-
     startExtend = clock();
     for ( int iclq=0 ; iclq<nCliques ; ++iclq )
     {
@@ -615,7 +524,8 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
         const double *ccoef = cpmRow->getElements() + starts[row];
         const int *cidx = cpmRow->getIndices() + starts[row];
 
-        memcpy( idx, cidx, sizeof(int)*nz );
+        idx.clear();
+        idx.insert( idx.end(), cidx, cidx+nz );
 
 
         if ( cliqueState[row] != Dominated )
@@ -633,7 +543,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                 clqe_set_costs( clqe,  &rc[0], cgraph_size(cgraph) );
 
                 clock_t startext = clock();
-                int status = clqe_extend( clqe, idx, nz, mip->getNumCols(), CLQEM_EXACT );
+                int status = clqe_extend( clqe, &idx[0], nz, mip->getNumCols(), CLQEM_EXACT );
                 clqMergeSecsExtend += ((double)clock()-startext)/(double)CLOCKS_PER_SEC;
                 if (status>0)
                 {
@@ -686,7 +596,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                         {
                             printf("\t%s : ", origrname );
                         }
-                        clqNames.add( origrname );
+                        clqNames.push_back( origrname );
                     
                         if (clqMergeVerbose>=2)
                         {
@@ -738,8 +648,9 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                         const double *crcoef = cpmRow->getElements() + starts[i];
                         const int *cridx = cpmRow->getIndices() + starts[i];
 
-                        addRow(  &nrRows, &nrCapRows, &nrNz, &nrCapNz, &nrStart, &nrIdx, &nrCoef, &nrSense, &nrRhs,
-                            nz, cridx, crcoef, 'G', rhs, nrname, rowNames );
+                        addRow( nrStart, nrIdx, nrCoef, nrLB, nrUB, 
+                                nz, cridx, crcoef, rhs, DBL_MAX, 
+                                nrname, rowNames );
                     }
                     else
                     {
@@ -781,9 +692,9 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                     }
                 }
                 // adding
-                addRow(  &nrRows, &nrCapRows, &nrNz, &nrCapNz, &nrStart, &nrIdx, &nrCoef, &nrSense, &nrRhs,
-                    size, idx, coef, 'L', rhs,
-                    clqNames.getName(ic), rowNames );
+                addRow( nrStart, nrIdx, nrCoef, nrLB, nrUB, 
+                        size, &idx[0], &coef[0], -DBL_MAX, rhs,
+                        clqNames[ic], rowNames );
             }
         }
         
@@ -792,26 +703,11 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
     
     /* flushing rows */
     {
-        vector< double > rowLB( nrRows ), rowUB( nrRows );
-        for ( int i=0 ; (i<nrRows) ; ++i ) {
-            switch (nrSense[i]) {
-                case 'E':
-                    rowLB[i] = rowUB[i] = nrRhs[i];
-                    break;
-                case 'L':
-                    rowUB[i] = nrRhs[i];
-                    rowLB[i] = -DBL_MAX;
-                    break;
-                case 'G':
-                    rowLB[i] = nrRhs[i];
-                    rowUB[i] = DBL_MAX;
-                    break;
-            }
-        }
-        mip->addRows( nrRows, nrStart, nrIdx, nrCoef, &rowLB[0], &rowUB[0] );
+        int crIdx = mip->getNumRows();
+        mip->addRows( nrStart.size()-1, &nrStart[0], &nrIdx[0], &nrCoef[0], &nrLB[0], &nrUB[0] );
+        for ( int i=0 ; i<(int)rowNames.size() ; ++i )
+            mip->setRowName( crIdx+i, rowNames[i] );
     }
-
-    
     
     if (clqMergeVerbose)
     {
@@ -820,23 +716,6 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
     }
 
 TERMINATE:
-    if (nrStart)
-        free( nrStart );
-    if (nrIdx)
-        free( nrIdx );
-    if (nrCoef)
-        free( nrCoef );
-    if (nrRhs)
-        free( nrRhs );
-    if (nrSense)
-        free( nrSense );
-
-    if (rc)
-        free( rc );
-
-    delete[] idx;
-    delete[] coef;
-
     clq_set_free( &newCliques );
 
     delete[] iv;
@@ -851,13 +730,3 @@ TERMINATE:
         free( colClqs);
 }
 
-static void *xrealloc( void *ptr, const size_t size )
-{
-   void *result = realloc( ptr, size );
-   if (!result)
-   {
-      fprintf(stderr, "No more memory available. Trying to allocate %zu bytes.", size);
-      exit(1);
-   }
-   return result;
-}
