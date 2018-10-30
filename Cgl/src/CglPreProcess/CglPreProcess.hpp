@@ -281,6 +281,9 @@ public:
   /// Keeps original column names
   void setKeepColumnNames( const bool keep );
 
+  /// Wheter to perform clique merging to produce a stronger formulation
+  void setMergeCliques( const bool merge_ );
+
 
   //@}
 private:
@@ -394,6 +397,8 @@ private:
 
   /// current elapsed or cpu time
   double getCurrentCPUTime() const;
+
+  bool mergeCliques_;
 
  //@}
 };

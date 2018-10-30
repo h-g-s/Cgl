@@ -30,6 +30,7 @@ static Cgl_message us_english[]=
   {CGL_ADDED_INTEGERS,12,1,"Added %d variables (from %d rows) with %d elements"},
   {CGL_POST_INFEASIBLE,13,1,"Postprocessed model is infeasible - possible tolerance issue - try without preprocessing"},
   {CGL_POST_CHANGED,14,1,"Postprocessing changed objective from %g to %g - possible tolerance issue - try without preprocessing"},
+  {CGL_PROCESS_CLQMRG,15,1,"Clique merge extended %d cliques, %d were dominated"},
   {CGL_GENERAL, 1000, 1, "%s"},
   {CGL_DUMMY_END,999999,0,""}
 };
@@ -52,3 +53,5 @@ CglMessage::CglMessage(Language language) :
   toCompact();
 
 }
+
+// # vim: ts=2 sw=2 et

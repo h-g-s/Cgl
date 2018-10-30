@@ -29,6 +29,7 @@ enum CGL_Message
   CGL_ADDED_INTEGERS,
   CGL_POST_INFEASIBLE,
   CGL_POST_CHANGED,
+  CGL_PROCESS_CLQMRG,
   CGL_GENERAL,
   CGL_DUMMY_END
 };
@@ -48,3 +49,5 @@ public:
 };
 
 #endif
+
+// # vim: ts=2 sw=2 et

@@ -38,6 +38,8 @@ char nameMps[50];
 #include "build_cgraph.h"
 /*-------------------------------*/
 
+#include "clique_merge.h"
+
 OsiSolverInterface *
 CglPreProcess::preProcess(OsiSolverInterface & model, 
                        bool makeEquality, int numberPasses)
@@ -2959,6 +2961,7 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface & model,
   
   returnModel->preprocess = this;
 
+
   /*----------SAMUEL_BRITO----------*/
   if(!returnModel->isPerformingHeuristics() && model.useCG()) {
 		const CGraph *currCG = model.getCGraph();
@@ -2967,9 +2970,15 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface & model,
 			CGraph *cg = build_cgraph(returnModel->getMatrixByRow(), returnModel->getNumCols(),
 									  returnModel->getColType(), returnModel->getRightHandSide(),
 								 	  returnModel->getRowSense());
-			returnModel->setCGraph(cg);
 			OsiSolverInterface::cgTime += (CoinCpuTime() - startCG);
 			OsiSolverInterface::countCG++;
+			returnModel->setCGraph(cg);
+      if (this->mergeCliques_) {
+        int nExt, nDom;
+        merge_cliques( returnModel, cg, 2, 4096, &nExt, &nDom );
+        handler_->message(CGL_PROCESS_CLQMRG,messages_)
+          << nExt << nDom << CoinMessageEol;
+      }
 		} else {
 			const int cgSize = cgraph_size(currCG);
 			const int newNumCols = returnModel->getNumCols();
@@ -2988,8 +2997,15 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface & model,
 				returnModel->setCGraph(cg);
 				OsiSolverInterface::cgTime += (CoinCpuTime() - startCG);
 				OsiSolverInterface::countCG++;
+        if (this->mergeCliques_) {
+          int nExt, nDom;
+          merge_cliques( returnModel, cg, 2, 4096, &nExt, &nDom );
+          handler_->message(CGL_PROCESS_CLQMRG,messages_)
+             << nExt << nDom << CoinMessageEol;
+        }
 			}
 		}
+
 	}
 	/*-------------------------------*/
 
@@ -6260,7 +6276,8 @@ CglPreProcess::CglPreProcess()
   rowType_(NULL),
   useElapsedTime_(true),
   timeLimit_(COIN_DBL_MAX),
-  keepColumnNames_(false)
+  keepColumnNames_(false),
+  mergeCliques_(false)
 {
   handler_ = new CoinMessageHandler();
   handler_->setLogLevel(2);
@@ -6284,7 +6301,8 @@ CglPreProcess::CglPreProcess(const CglPreProcess & rhs)
   options_(rhs.options_),
   useElapsedTime_(true),
   timeLimit_(COIN_DBL_MAX),
-  keepColumnNames_(false)
+  keepColumnNames_(false),
+  mergeCliques_(false)
 {
   if (defaultHandler_) {
     handler_ = new CoinMessageHandler();
@@ -6415,6 +6433,7 @@ CglPreProcess::operator=(const CglPreProcess& rhs)
     cuts_ = rhs.cuts_;
     timeLimit_ = rhs.timeLimit_;
     keepColumnNames_ = rhs.keepColumnNames_;
+    mergeCliques_ = rhs.mergeCliques_;
   }
   return *this;
 }
@@ -8051,6 +8070,11 @@ void CglPreProcess::setTimeLimit( const double timeLimit, const bool useElapsedT
 void CglPreProcess::setKeepColumnNames( const bool keep )
 {
   this->keepColumnNames_ = keep;
+}
+
+void CglPreProcess::setMergeCliques( const bool merge_ )
+{
+  this->mergeCliques_ = merge_;
 }
 
 double CglPreProcess::getCurrentCPUTime() const

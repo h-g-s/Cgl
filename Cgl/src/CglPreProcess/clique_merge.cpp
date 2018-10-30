@@ -64,7 +64,8 @@ private:
 #define MAX_SIZE_CLIQUE_TO_BE_EXTENDED 256
 
 // global configurations and execution stats
-int clqMergeVerbose = 1;
+int clqMergeVerbose = 0;
+/*
 double clqMergeSecsCheckClique = 0.0;
 double clqMergeSecsExtendAndDominate = 0.0;
 double clqMergeSecsAddAndRemove = 0.0;
@@ -72,7 +73,7 @@ double clqMergeSecsExtend = 0.0;
 int clqMergeNExtended = 0;
 int clqMergeNDominatedFull = 0;
 int clqMergeNDominatedEqPart = 0;
-
+*/
 
 /* fills from start until the last element before end */
 #define FILL( vector, start, end, value ) { \
@@ -362,10 +363,10 @@ static int detect_cliques(
 
     } // all rows
 
-    clqMergeSecsCheckClique = ((double)clock()-startcq) / ((double)CLOCKS_PER_SEC);
+    //clqMergeSecsCheckClique = ((double)clock()-startcq) / ((double)CLOCKS_PER_SEC);
 
-    if (clqMergeVerbose>=1)
-        printf("model checked in %.4f seconds. %d candidate cliques for extension/merging. clique sizes range:[%d...%d], av %.2f.\n", clqMergeSecsCheckClique, nCliques, minClqSize, maxClqSize, avClgSize/((double)nCliques) );
+    //if (clqMergeVerbose>=1)
+      //  printf("model checked in %.4f seconds. %d candidate cliques for extension/merging. clique sizes range:[%d...%d], av %.2f.\n", clqMergeSecsCheckClique, nCliques, minClqSize, maxClqSize, avClgSize/((double)nCliques) );
 
     return (int) cliques.size();
 }
@@ -409,8 +410,10 @@ static void addRow(
 
 /* tries to extend every clique in mip using
  * conflict graph cgraph, dominated cliques are removed */
-void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
+void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk,
+        int *nExtended, int *nDominated )
 {
+    *nExtended = *nDominated = 0;
     OsiSolverInterface *mip = (OsiSolverInterface *) osi;
 
     const CoinPackedMatrix *cpmRow =  mip->getMatrixByRow();
@@ -544,13 +547,14 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
 
                 clock_t startext = clock();
                 int status = clqe_extend( clqe, &idx[0], nz, mip->getNumCols(), CLQEM_EXACT );
-                clqMergeSecsExtend += ((double)clock()-startext)/(double)CLOCKS_PER_SEC;
+                //clqMergeSecsExtend += ((double)clock()-startext)/(double)CLOCKS_PER_SEC;
                 if (status>0)
                 {
                     if (clqMergeVerbose>=2)
                         printf("-> constraint %s extended: \n", mip->getRowName(row).c_str() );
 
-                    ++clqMergeNExtended;
+                    //++clqMergeNExtended;
+                    ++(*nExtended);
 
                     // to sort cliques found per size
                     clqsSize.clear();
@@ -620,7 +624,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
         } // non dominated clique constraints
     } // all clique constraints
     
-    clqMergeSecsExtendAndDominate = ((double)clock()-(double)startExtend)/((double)CLOCKS_PER_SEC);
+    //clqMergeSecsExtendAndDominate = ((double)clock()-(double)startExtend)/((double)CLOCKS_PER_SEC);
 
     {
         clock_t startRemAdd = clock();
@@ -636,7 +640,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                 {
                     if (mip->getRowSense()[i]=='E')
                     {
-                        ++clqMergeNDominatedEqPart;
+                        //++clqMergeNDominatedEqPart;
                         // adding >= part, <= part will be added separately
                         int nz = cpmRow->getVectorLengths()[i];
                         double rhs = Arhs[i];
@@ -654,7 +658,8 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
                     }
                     else
                     {
-                        ++clqMergeNDominatedFull;
+                        //++clqMergeNDominatedFull;
+                        ++(*nDominated);
                     }
                     toRemove[nToRemove++] = i;
                 }
@@ -671,6 +676,8 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
         if (clq_set_number_of_cliques(newCliques)>0)
         {
             int nNewCliques = clq_set_number_of_cliques(newCliques);
+
+            idx.resize( mip->getNumCols(), INT_MAX );
 
             for ( int ic=0 ; (ic<nNewCliques) ; ++ic )
             {
@@ -698,7 +705,7 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
             }
         }
         
-        clqMergeSecsAddAndRemove = ((double)clock()-(double)startRemAdd)/((double)CLOCKS_PER_SEC);
+        //clqMergeSecsAddAndRemove = ((double)clock()-(double)startRemAdd)/((double)CLOCKS_PER_SEC);
     }
     
     /* flushing rows */
@@ -709,11 +716,12 @@ void merge_cliques( void *osi, CGraph *cgraph, int maxExtensions, int maxItBk )
             mip->setRowName( crIdx+i, rowNames[i] );
     }
     
+    /*
     if (clqMergeVerbose)
     {
         printf("%d extended, %d dom full, %d dom eq.\n", clqMergeNExtended, clqMergeNDominatedFull, clqMergeNDominatedEqPart );
         fflush( stdout );
-    }
+    }*/
 
 TERMINATE:
     clq_set_free( &newCliques );
