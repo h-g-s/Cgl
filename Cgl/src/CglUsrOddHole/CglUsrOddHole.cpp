@@ -6,12 +6,8 @@
 #include "OsiRowCut.hpp"
 #include "CoinTime.hpp"
 #include "CglUsrOddHole.hpp"
-
-extern "C" {
-	#include "cut.h"
-	#include "macros.h"
-	#include "oddhs.h"
-}
+#include "cut.h"
+#include "oddhs.h"
 
 int CglUsrOddHole::sepCuts = 0;
 double CglUsrOddHole::sepTime = 0.0;
