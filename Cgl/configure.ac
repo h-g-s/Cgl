@@ -157,6 +157,7 @@ AC_CONFIG_FILES([Makefile
                  src/CglResidualCapacity/Makefile
                  src/CglSimpleRounding/Makefile
                  src/CglTwomir/Makefile
+                 src/CglUsrOddHole/Makefile
                  src/CglZeroHalf/Makefile
                  test/Makefile
                  cgl.pc
