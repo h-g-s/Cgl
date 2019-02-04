@@ -1,6 +1,6 @@
 //
 // Name:     CglRedSplit.cpp
-// Author:   Francois Margot                                                  
+// Author:   Francois Margot
 //           Tepper School of Business
 //           Carnegie Mellon University, Pittsburgh, PA 15213
 // Date:     2/6/05
@@ -21,23 +21,21 @@
 #include "CoinPragma.hpp"
 #include "CglRedSplit.hpp"
 
-
-void
-CglRedSplitUnitTest(const OsiSolverInterface *baseSiP,
-		    const std::string mpsDir)
+void CglRedSplitUnitTest(const OsiSolverInterface *baseSiP,
+  const std::string mpsDir)
 {
   // Test default constructor
   {
     CglRedSplit aGenerator;
   }
-  
+
   // Test copy & assignment
   {
     CglRedSplit rhs;
     {
       CglRedSplit bGenerator;
       CglRedSplit cGenerator(bGenerator);
-      rhs=bGenerator;
+      rhs = bGenerator;
     }
   }
 
@@ -45,7 +43,7 @@ CglRedSplitUnitTest(const OsiSolverInterface *baseSiP,
   {
     CglRedSplit getset;
     CglRedSplitParam gsparam = getset.getParam();
-    
+
     double geps = 10 * gsparam.getEPS();
     gsparam.setEPS(geps);
     double geps2 = gsparam.getEPS();
@@ -71,40 +69,38 @@ CglRedSplitUnitTest(const OsiSolverInterface *baseSiP,
   // Test generateCuts
   {
     CglRedSplit gct;
-    OsiSolverInterface  *siP = baseSiP->clone();
-    std::string fn = mpsDir+"p0033";
-    std::string fn2 = mpsDir+"p0033.mps";
+    OsiSolverInterface *siP = baseSiP->clone();
+    std::string fn = mpsDir + "p0033";
+    std::string fn2 = mpsDir + "p0033.mps";
     FILE *in_f = fopen(fn2.c_str(), "r");
-    if(in_f == NULL) {
-      std::cout<<"Can not open file "<<fn2<<std::endl<<"Skip test of CglRedSplit::generateCuts()"<<std::endl;
-    }
-    else {
+    if (in_f == NULL) {
+      std::cout << "Can not open file " << fn2 << std::endl
+                << "Skip test of CglRedSplit::generateCuts()" << std::endl;
+    } else {
       fclose(in_f);
-      siP->readMps(fn.c_str(),"mps");
- 
+      siP->readMps(fn.c_str(), "mps");
+
       siP->initialSolve();
       double lpRelax = siP->getObjValue();
-      
+
       OsiCuts cs;
       gct.getParam().setMAX_SUPPORT(34);
       gct.getParam().setUSE_CG2(1);
       //      gct.getParam().setUSE_CG2(1);
       gct.generateCuts(*siP, cs);
       int nRowCuts = cs.sizeRowCuts();
-      std::cout<<"There are "<<nRowCuts<<" Reduce-and-Split cuts"<<std::endl;
+      std::cout << "There are " << nRowCuts << " Reduce-and-Split cuts" << std::endl;
       assert(cs.sizeRowCuts() > 0);
       OsiSolverInterface::ApplyCutsReturnCode rc = siP->applyCuts(cs);
-      
+
       siP->resolve();
-      
-      double lpRelaxAfter= siP->getObjValue(); 
-      std::cout<<"Initial LP value: "<<lpRelax<<std::endl;
-      std::cout<<"LP value with cuts: "<<lpRelaxAfter<<std::endl;
-      assert( lpRelax < lpRelaxAfter );
+
+      double lpRelaxAfter = siP->getObjValue();
+      std::cout << "Initial LP value: " << lpRelax << std::endl;
+      std::cout << "LP value with cuts: " << lpRelaxAfter << std::endl;
+      assert(lpRelax < lpRelaxAfter);
       assert(lpRelaxAfter < 3089.1);
     }
     delete siP;
   }
-
 }
-

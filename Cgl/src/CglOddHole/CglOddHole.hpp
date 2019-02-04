@@ -12,12 +12,10 @@
 
 /** Odd Hole Cut Generator Class */
 class CglOddHole : public CglCutGenerator {
-   friend void CglOddHoleUnitTest(const OsiSolverInterface * siP,
-				  const std::string mpdDir );
- 
+  friend void CglOddHoleUnitTest(const OsiSolverInterface *siP,
+    const std::string mpdDir);
+
 public:
-    
-  
   /**@name Generate Cuts */
   //@{
   /** Generate odd hole cuts for the model of the solver interface, si.
@@ -38,8 +36,8 @@ public:
       randomized subset and also speed up shortest path algorithm used.
 
   */
-  virtual void generateCuts( const OsiSolverInterface & si, OsiCuts & cs,
-			     const CglTreeInfo info = CglTreeInfo());
+  virtual void generateCuts(const OsiSolverInterface &si, OsiCuts &cs,
+    const CglTreeInfo info = CglTreeInfo());
   //@}
 
   /**@name Create Row List */
@@ -47,18 +45,18 @@ public:
   /// Create a list of rows which might yield cuts
   /// this is to speed up process
   /// The possible parameter is a list to cut down search
-  void createRowList( const OsiSolverInterface & si,
-		      const int * possible=NULL);
+  void createRowList(const OsiSolverInterface &si,
+    const int *possible = NULL);
   /// This version passes in a list - 1 marks possible
-  void createRowList(int numberRows, const int * whichRow);
+  void createRowList(int numberRows, const int *whichRow);
   //@}
 
   /**@name Create Clique List */
   //@{
   /// Create a list of extra row cliques which may not be in matrix
   /// At present these are classical cliques
-  void createCliqueList(int numberCliques, const int * cliqueStart,
-		     const int * cliqueMember);
+  void createCliqueList(int numberCliques, const int *cliqueStart,
+    const int *cliqueMember);
   //@}
 
   /**@name Number Possibilities */
@@ -81,44 +79,41 @@ public:
 
   /**@name Constructors and destructors */
   //@{
-  /// Default constructor 
-  CglOddHole ();
- 
-  /// Copy constructor 
-  CglOddHole (
+  /// Default constructor
+  CglOddHole();
+
+  /// Copy constructor
+  CglOddHole(
     const CglOddHole &);
 
   /// Clone
-  virtual CglCutGenerator * clone() const;
+  virtual CglCutGenerator *clone() const;
 
-  /// Assignment operator 
+  /// Assignment operator
   CglOddHole &
-    operator=(
-    const CglOddHole& rhs);
-  
-  /// Destructor 
-  virtual
-    ~CglOddHole ();
+  operator=(
+    const CglOddHole &rhs);
+
+  /// Destructor
+  virtual ~CglOddHole();
 
   /// This can be used to refresh any inforamtion
-  virtual void refreshSolver(OsiSolverInterface * solver);
+  virtual void refreshSolver(OsiSolverInterface *solver);
   //@}
-      
-private:
-  
- // Private member methods
 
+private:
+  // Private member methods
 
   /**@name Private methods */
   //@{
   /// Generate cuts from matrix copy and solution
   /// If packed true then <=1 rows, otherwise >=1 rows.
-  void generateCuts(const OsiRowCutDebugger * debugger, 
-		    const CoinPackedMatrix & rowCopy,
-		    const double * solution, const double * dj,
-		    OsiCuts & cs, const int * suitableRow,
-		    const int * fixedColumn,const CglTreeInfo info,
-		    bool packed);
+  void generateCuts(const OsiRowCutDebugger *debugger,
+    const CoinPackedMatrix &rowCopy,
+    const double *solution, const double *dj,
+    OsiCuts &cs, const int *suitableRow,
+    const int *fixedColumn, const CglTreeInfo info,
+    bool packed);
   //@}
 
   // Private member data
@@ -126,13 +121,13 @@ private:
   /**@name Private member data */
   //@{
   /// list of suitableRows
-  int * suitableRows_;
+  int *suitableRows_;
   /// start of each clique
-  int * startClique_;
+  int *startClique_;
   /// clique members
-  int * member_;
+  int *member_;
   /// epsilon
-  double epsilon_;  
+  double epsilon_;
   /// 1-epsilon
   double onetol_;
   /// Minimum violation
@@ -154,7 +149,7 @@ private:
     have to be compiled into the library. And that's a gain, because the
     library should be compiled with optimization on, but this method should be
     compiled with debugging. */
-void CglOddHoleUnitTest(const OsiSolverInterface * siP,
-			const std::string mpdDir );
-  
+void CglOddHoleUnitTest(const OsiSolverInterface *siP,
+  const std::string mpdDir);
+
 #endif

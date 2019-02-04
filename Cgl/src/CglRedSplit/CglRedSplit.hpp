@@ -25,8 +25,9 @@
 
 class CglRedSplit : public CglCutGenerator {
 
-  friend void CglRedSplitUnitTest(const OsiSolverInterface * siP,
-				  const std::string mpdDir);
+  friend void CglRedSplitUnitTest(const OsiSolverInterface *siP,
+    const std::string mpdDir);
+
 public:
   /**@name generateCuts */
   //@{
@@ -58,21 +59,20 @@ public:
       solutions violating integrality constraints. 
 
   */
-  virtual void generateCuts(const OsiSolverInterface & si, OsiCuts & cs,
-			    const CglTreeInfo info = CglTreeInfo());
+  virtual void generateCuts(const OsiSolverInterface &si, OsiCuts &cs,
+    const CglTreeInfo info = CglTreeInfo());
 
   /// Return true if needs optimal basis to do cuts (will return true)
   virtual bool needsOptimalBasis() const;
   //@}
-  
-  
+
   /**@name Public Methods */
   //@{
 
   // Set the parameters to the values of the given CglRedSplitParam object.
-  void setParam(const CglRedSplitParam &source); 
-  // Return the CglRedSplitParam object of the generator. 
-  inline CglRedSplitParam getParam() const {return param;}
+  void setParam(const CglRedSplitParam &source);
+  // Return the CglRedSplitParam object of the generator.
+  inline CglRedSplitParam getParam() const { return param; }
 
   // Compute entries of low_is_lub and up_is_lub.
   void compute_is_lub();
@@ -81,21 +81,21 @@ public:
   void compute_is_integer();
 
   /// Set given_optsol to the given optimal solution given_sol.
-  /// If given_optsol is set using this method, 
+  /// If given_optsol is set using this method,
   /// the code will stop as soon as
-  /// a generated cut is violated by the given solution; exclusively 
+  /// a generated cut is violated by the given solution; exclusively
   /// for debugging purposes.
   void set_given_optsol(const double *given_sol, const int card_sol);
 
-  /// Print some of the data members  
+  /// Print some of the data members
   void print() const;
 
-  /// Print the current simplex tableau  
+  /// Print the current simplex tableau
   void printOptTab(OsiSolverInterface *solver) const;
-  
+
   //@}
 
- /**@name Public Methods (soon to be obsolete)*/
+  /**@name Public Methods (soon to be obsolete)*/
   //@{
   //************************************************************
   // TO BE REMOVED
@@ -112,7 +112,7 @@ public:
   void setAway(double value);
   /// Get value of away
   double getAway() const;
- /** Set the value of LUB, value considered large for the absolute value of
+  /** Set the value of LUB, value considered large for the absolute value of
       a lower or upper bound on a variable;
       Default: 1000 */
   void setLUB(double value);
@@ -172,43 +172,41 @@ public:
 
   /**@name Constructors and destructors */
   //@{
-  /// Default constructor 
+  /// Default constructor
   CglRedSplit();
 
-  /// Constructor with specified parameters 
+  /// Constructor with specified parameters
   CglRedSplit(const CglRedSplitParam &RS_param);
- 
-  /// Copy constructor 
-  CglRedSplit (const CglRedSplit &);
+
+  /// Copy constructor
+  CglRedSplit(const CglRedSplit &);
 
   /// Clone
-  virtual CglCutGenerator * clone() const;
+  virtual CglCutGenerator *clone() const;
 
-  /// Assignment operator 
+  /// Assignment operator
   CglRedSplit &
-    operator=(
-    const CglRedSplit& rhs);
-  
-  /// Destructor 
-  virtual
-    ~CglRedSplit ();
+  operator=(
+    const CglRedSplit &rhs);
+
+  /// Destructor
+  virtual ~CglRedSplit();
   /// Create C++ lines to get to current state
-  virtual std::string generateCpp( FILE * fp);
+  virtual std::string generateCpp(FILE *fp);
   //@}
-    
+
 private:
-  
   // Private member methods
 
-/**@name Private member methods */
+  /**@name Private member methods */
 
   //@{
 
   // Method generating the cuts after all CglRedSplit members are properly set.
-  void generateCuts(OsiCuts & cs);
+  void generateCuts(OsiCuts &cs);
 
   /// Compute the fractional part of value, allowing for small error.
-  inline double rs_above_integer(double value); 
+  inline double rs_above_integer(double value);
 
   /// Perform row r1 of pi := row r1 of pi - step * row r2 of pi.
   void update_pi_mat(int r1, int r2, int step);
@@ -216,10 +214,10 @@ private:
   /// Perform row r1 of tab := row r1 of tab - step * row r2 of tab.
   void update_redTab(int r1, int r2, int step);
 
-  /// Find optimal integer step for changing row r1 by adding to it a 
+  /// Find optimal integer step for changing row r1 by adding to it a
   /// multiple of another row r2.
-  void find_step(int r1, int r2, int *step, 
-		 double *reduc, double *norm);
+  void find_step(int r1, int r2, int *step,
+    double *reduc, double *norm);
 
   /// Test if an ordered pair of rows yields a reduction. Perform the
   /// reduction if it is acceptable.
@@ -231,22 +229,22 @@ private:
   /// Generate a row of the current LP tableau.
   void generate_row(int index_row, double *row);
 
-  /// Generate a mixed integer Chvatal-Gomory cut, when all non basic 
+  /// Generate a mixed integer Chvatal-Gomory cut, when all non basic
   /// variables are non negative and at their lower bound.
   int generate_cgcut(double *row, double *rhs);
 
-  /// Generate a mixed integer Chvatal-Gomory cut, when all non basic 
+  /// Generate a mixed integer Chvatal-Gomory cut, when all non basic
   /// variables are non negative and at their lower bound (different formula)
   int generate_cgcut_2(int basic_ind, double *row, double *rhs);
 
   /// Use multiples of the initial inequalities to cancel out the coefficients
   /// of the slack variables.
-  void eliminate_slacks(double *row, 
-			const double *elements, 
-			const CoinBigIndex *start,
-			const int *indices,
-			const int *rowLength,
-			const double *rhs, double *rowrhs);
+  void eliminate_slacks(double *row,
+    const double *elements,
+    const CoinBigIndex *start,
+    const int *indices,
+    const int *rowLength,
+    const double *rhs, double *rowrhs);
 
   /// Change the sign of the coefficients of the continuous non basic
   /// variables at their upper bound.
@@ -258,7 +256,7 @@ private:
   /// accordingly.
   void unflip(double *row, double *rowrhs, double *slack_val);
 
-  /// Return the scale factor for the row. 
+  /// Return the scale factor for the row.
   /// Compute max_coeff: maximum absolute value of the coefficients.
   /// Compute min_coeff: minimum absolute value of the coefficients
   /// larger than EPS_COEFF.
@@ -269,49 +267,48 @@ private:
 
   /// Generate the packed cut from the row representation.
   int generate_packed_row(const double *xlp, double *row,
-			  int *rowind, double *rowelem, 
-			  int *card_row, double & rhs);
+    int *rowind, double *rowelem,
+    int *card_row, double &rhs);
 
   /// Check that the generated cuts do not cut a given optimal solution.
   void check_optsol(const int calling_place,
-		    const double *xlp, const double *slack_val,
-		    const int do_flip);
+    const double *xlp, const double *slack_val,
+    const int do_flip);
 
   /// Check that the generated cuts do not cut a given optimal solution.
   void check_optsol(const int calling_place,
-		    const double *xlp, const double *slack_val,
-		    const double *ck_row, const double ck_rhs, 
-		    const int cut_number, const int do_flip);
+    const double *xlp, const double *slack_val,
+    const double *ck_row, const double ck_rhs,
+    const int cut_number, const int do_flip);
 
   // Check that two vectors are different.
-  bool rs_are_different_vectors(const int *vect1, 
-				const int *vect2,
-				const int dim);
+  bool rs_are_different_vectors(const int *vect1,
+    const int *vect2,
+    const int dim);
 
   // Check that two vectors are different.
-  bool rs_are_different_vectors(const double *vect1, 
-				const double *vect2,
-				const int dim);
+  bool rs_are_different_vectors(const double *vect1,
+    const double *vect2,
+    const int dim);
 
   // Check that two matrices are different.
-  bool rs_are_different_matrices(const CoinPackedMatrix *mat1, 
-				 const CoinPackedMatrix *mat2,
-				 const int nmaj,
-				 const int nmin);
+  bool rs_are_different_matrices(const CoinPackedMatrix *mat1,
+    const CoinPackedMatrix *mat2,
+    const int nmaj,
+    const int nmin);
   //@}
 
-  
   // Private member data
 
-/**@name Private member data */
+  /**@name Private member data */
 
   //@{
 
-  /// Object with CglRedSplitParam members. 
+  /// Object with CglRedSplitParam members.
   CglRedSplitParam param;
 
   /// Number of rows ( = number of slack variables) in the current LP.
-  int nrow; 
+  int nrow;
 
   /// Number of structural variables in the current LP.
   int ncol;
@@ -321,7 +318,7 @@ private:
 
   /// Upper bounds for structural variables
   const double *colUpper;
-  
+
   /// Lower bounds for constraints
   const double *rowLower;
 
@@ -332,20 +329,20 @@ private:
   const double *rowRhs;
 
   /// Number of integer basic structural variables that are fractional in the
-  /// current lp solution (at least param.away_ from being integer).  
+  /// current lp solution (at least param.away_ from being integer).
   int card_intBasicVar_frac;
 
   /// Number of integer non basic structural variables in the
-  /// current lp solution.  
-  int card_intNonBasicVar; 
+  /// current lp solution.
+  int card_intNonBasicVar;
 
   /// Number of continuous non basic variables (structural or slack) in the
-  /// current lp solution.  
+  /// current lp solution.
   int card_contNonBasicVar;
 
   /// Number of non basic variables (structural or slack) at their
   /// upper bound in the current lp solution.
-  int card_nonBasicAtUpper; 
+  int card_nonBasicAtUpper;
 
   /// Number of non basic variables (structural or slack) at their
   /// lower bound in the current lp solution.
@@ -353,21 +350,21 @@ private:
 
   /// Characteristic vector for integer basic structural variables
   /// with non integer value in the current lp solution.
-  int *cv_intBasicVar_frac;  
+  int *cv_intBasicVar_frac;
 
-  /// List of integer structural basic variables 
+  /// List of integer structural basic variables
   /// (in order of pivot in selected rows for cut generation).
   int *intBasicVar_frac;
 
   /// List of integer structural non basic variables.
-  int *intNonBasicVar; 
+  int *intNonBasicVar;
 
-  /// List of continuous non basic variables (structural or slack). 
+  /// List of continuous non basic variables (structural or slack).
   // slacks are considered continuous (no harm if this is not the case).
   int *contNonBasicVar;
 
-  /// List of non basic variables (structural or slack) at their 
-  /// upper bound. 
+  /// List of non basic variables (structural or slack) at their
+  /// upper bound.
   int *nonBasicAtUpper;
 
   /// List of non basic variables (structural or slack) at their lower
@@ -396,24 +393,24 @@ private:
 
   /// Right hand side of the tableau.
   /// Only rows used for generation.
-  double *rhsTab ;
+  double *rhsTab;
 
-  /// Given optimal solution that should not be cut; only for debug. 
+  /// Given optimal solution that should not be cut; only for debug.
   const double *given_optsol;
 
   /// Number of entries in given_optsol.
   int card_given_optsol;
 
   /// Characteristic vectors of structural integer variables or continuous
-  /// variables currently fixed to integer values. 
+  /// variables currently fixed to integer values.
   int *is_integer;
 
-  /// Characteristic vector of the structural variables whose lower bound 
-  /// in absolute value is larger than LUB. 
+  /// Characteristic vector of the structural variables whose lower bound
+  /// in absolute value is larger than LUB.
   int *low_is_lub;
 
-  /// Characteristic vector of the structural variables whose upper bound 
-  /// in absolute value is larger than LUB. 
+  /// Characteristic vector of the structural variables whose upper bound
+  /// in absolute value is larger than LUB.
   int *up_is_lub;
 
   /// Pointer on solver. Reset by each call to generateCuts().
@@ -428,7 +425,7 @@ private:
   /// Pointer on column type. Reset by each call to generateCuts().
   const char *colType;
 
-  /// Pointer on matrix of coefficient ordered by rows. 
+  /// Pointer on matrix of coefficient ordered by rows.
   /// Reset by each call to generateCuts().
   const CoinPackedMatrix *byRow;
 
@@ -441,8 +438,7 @@ private:
     have to be compiled into the library. And that's a gain, because the
     library should be compiled with optimization on, but this method should be
     compiled with debugging. */
-void CglRedSplitUnitTest(const OsiSolverInterface * siP,
-			 const std::string mpdDir );
-
+void CglRedSplitUnitTest(const OsiSolverInterface *siP,
+  const std::string mpdDir);
 
 #endif

@@ -11,8 +11,8 @@
 
 /** Lift And Project Cut Generator Class */
 class CglLiftAndProject : public CglCutGenerator {
-   friend void CglLiftAndProjectUnitTest(const OsiSolverInterface * siP,
-					const std::string mpdDir );
+  friend void CglLiftAndProjectUnitTest(const OsiSolverInterface *siP,
+    const std::string mpdDir);
 
 public:
   /**@name Generate Cuts */
@@ -21,26 +21,27 @@ public:
       model of the solver interface, si. 
       Insert the generated cuts into OsiCut, cs.
   */
-  virtual void generateCuts(const OsiSolverInterface & si, OsiCuts & cs,
-			    const CglTreeInfo info = CglTreeInfo());
+  virtual void generateCuts(const OsiSolverInterface &si, OsiCuts &cs,
+    const CglTreeInfo info = CglTreeInfo());
 
   /** Get the normalization : Either beta=+1 or beta=-1.
   */
 
-  double getBeta() const {
+  double getBeta() const
+  {
     return beta_;
   }
 
   /** Set the normalization : Either beta=+1 or beta=-1.
       Default value is 1.
   */
-  void setBeta(int oneOrMinusOne){
-    if (oneOrMinusOne==1 || oneOrMinusOne==-1){
-      beta_= static_cast<double>(oneOrMinusOne);
-    }
-    else {
+  void setBeta(int oneOrMinusOne)
+  {
+    if (oneOrMinusOne == 1 || oneOrMinusOne == -1) {
+      beta_ = static_cast< double >(oneOrMinusOne);
+    } else {
       throw CoinError("Unallowable value. Beta must be 1 or -1",
-		      "cutGeneration","CglLiftAndProject");
+        "cutGeneration", "CglLiftAndProject");
     }
   }
 
@@ -48,31 +49,29 @@ public:
 
   /**@name Constructors and destructors */
   //@{
-  /// Default constructor 
-  CglLiftAndProject ();
- 
-  /// Copy constructor 
-  CglLiftAndProject (
+  /// Default constructor
+  CglLiftAndProject();
+
+  /// Copy constructor
+  CglLiftAndProject(
     const CglLiftAndProject &);
 
   /// Clone
-  virtual CglCutGenerator * clone() const;
+  virtual CglCutGenerator *clone() const;
 
-  /// Assignment operator 
+  /// Assignment operator
   CglLiftAndProject &
-    operator=(
-    const CglLiftAndProject& rhs);
-  
-  /// Destructor 
-  virtual
-    ~CglLiftAndProject ();
+  operator=(
+    const CglLiftAndProject &rhs);
+
+  /// Destructor
+  virtual ~CglLiftAndProject();
   /// Create C++ lines to get to current state
-  virtual std::string generateCpp( FILE * fp);
+  virtual std::string generateCpp(FILE *fp);
   //@}
 
 private:
-  
- // Private member methods
+  // Private member methods
 
   /**@name Private methods */
   //@{
@@ -84,11 +83,11 @@ private:
   /**@name Private member data */
   //@{
   /// The normalization is beta_=1 or beta_=-1
-  double beta_;  
+  double beta_;
   /// epsilon
-  double epsilon_;  
+  double epsilon_;
   /// 1-epsilon
-  double onetol_;  
+  double onetol_;
   //@}
 };
 
@@ -98,7 +97,7 @@ private:
     have to be compiled into the library. And that's a gain, because the
     library should be compiled with optimization on, but this method should be
     compiled with debugging. */
-void CglLiftAndProjectUnitTest(const OsiSolverInterface * siP,
-			      const std::string mpdDir );
-  
+void CglLiftAndProjectUnitTest(const OsiSolverInterface *siP,
+  const std::string mpdDir);
+
 #endif

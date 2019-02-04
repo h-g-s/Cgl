@@ -14,45 +14,41 @@
 #include "CoinMessage.hpp"
 #include "CoinMessageHandler.hpp"
 
-namespace LAP
-{
+namespace LAP {
 /** Forward declaration of class to store extra debug data.*/
 class DebugData;
 /** Types of messages for lift-and-project simplex.*/
-enum LAP_messages
-{
-    Separating,
-    FoundImprovingRow,
-    FoundBestImprovingCol,
-    WarnFailedBestImprovingCol,
-    LogHead,
-    PivotLog,
-    FinishedOptimal,
-    HitLimit,
-    NumberNegRc,
-    NumberZeroRc,
-    NumberPosRc,
-    WeightsStats,
-    WarnBadSigmaComputation,
-    WarnBadRowComputation,
-    WarnGiveUpRow,
-    PivotFailedSigmaUnchanged,
-    PivotFailedSigmaIncreased,
-    FailedSigmaIncreased,
-    WarnBadRhsComputation,
-    WarnFailedPivotTol,
-    WarnFailedPivotIIf,
-    RoundStats,
-    CutStat,
-    DUMMY_END
+enum LAP_messages {
+  Separating,
+  FoundImprovingRow,
+  FoundBestImprovingCol,
+  WarnFailedBestImprovingCol,
+  LogHead,
+  PivotLog,
+  FinishedOptimal,
+  HitLimit,
+  NumberNegRc,
+  NumberZeroRc,
+  NumberPosRc,
+  WeightsStats,
+  WarnBadSigmaComputation,
+  WarnBadRowComputation,
+  WarnGiveUpRow,
+  PivotFailedSigmaUnchanged,
+  PivotFailedSigmaIncreased,
+  FailedSigmaIncreased,
+  WarnBadRhsComputation,
+  WarnFailedPivotTol,
+  WarnFailedPivotIIf,
+  RoundStats,
+  CutStat,
+  DUMMY_END
 };
 /** Message handler for lift-and-project simplex. */
-class LandPMessages : public CoinMessages
-{
+class LandPMessages : public CoinMessages {
 public:
-
-    /** Constructor */
-    LandPMessages();
+  /** Constructor */
+  LandPMessages();
 };
 }
 #endif

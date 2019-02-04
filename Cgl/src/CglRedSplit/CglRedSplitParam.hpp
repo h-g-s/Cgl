@@ -15,11 +15,10 @@
 
 #include "CglParam.hpp"
 
+/**@name CglRedSplit Parameters */
+//@{
 
-  /**@name CglRedSplit Parameters */
-  //@{
-
-  /** Class collecting parameters the Reduced-and-split cut generator.
+/** Class collecting parameters the Reduced-and-split cut generator.
 
       Parameters of the generator are listed below. Modifying the default 
       values for parameters other than the last four might result in 
@@ -56,12 +55,11 @@
       - maxTab: Controls the number of rows selected for the generation. See
                 method setMaxTab().
   */
-  //@}
+//@}
 
 class CglRedSplitParam : public CglParam {
 
 public:
-
   /**@name Set/get methods */
   //@{
   /** Set away, the minimum distance from being integer used for selecting 
@@ -70,80 +68,80 @@ public:
       Default: 0.05 */
   virtual void setAway(const double value);
   /// Get value of away
-  inline double getAway() const {return away_;}
+  inline double getAway() const { return away_; }
 
- /** Set the value of LUB, value considered large for the absolute value of
+  /** Set the value of LUB, value considered large for the absolute value of
       a lower or upper bound on a variable;
       Default: 1000 */
   virtual void setLUB(const double value);
   /** Get the value of LUB */
-  inline double getLUB() const {return LUB;}
+  inline double getLUB() const { return LUB; }
 
   /** Set the value of EPS_ELIM, epsilon for values of coefficients when 
       eliminating slack variables;
       Default: 1e-12 */
   void setEPS_ELIM(const double value);
   /** Get the value of EPS_ELIM */
-  double getEPS_ELIM() const {return EPS_ELIM;}
-  
+  double getEPS_ELIM() const { return EPS_ELIM; }
+
   /** Set EPS_RELAX_ABS */
   virtual void setEPS_RELAX_ABS(const double eps_ra);
   /** Get value of EPS_RELAX_ABS */
-  inline double getEPS_RELAX_ABS() const {return EPS_RELAX_ABS;}
+  inline double getEPS_RELAX_ABS() const { return EPS_RELAX_ABS; }
 
   /** Set EPS_RELAX_REL */
   virtual void setEPS_RELAX_REL(const double eps_rr);
   /** Get value of EPS_RELAX_REL */
-  inline double getEPS_RELAX_REL() const {return EPS_RELAX_REL;}
+  inline double getEPS_RELAX_REL() const { return EPS_RELAX_REL; }
 
-  // Set the maximum ratio between largest and smallest non zero 
+  // Set the maximum ratio between largest and smallest non zero
   // coefficients in a cut. Default: 1e8.
   virtual void setMAXDYN(double value);
   /** Get the value of MAXDYN */
-  inline double getMAXDYN() const {return MAXDYN_LUB;}
+  inline double getMAXDYN() const { return MAXDYN_LUB; }
 
-  // Set the maximum ratio between largest and smallest non zero 
+  // Set the maximum ratio between largest and smallest non zero
   // coefficient in a cut involving structural variables with
   // lower or upper bound in absolute value larger than LUB.
   // Should logically be larger or equal to MAXDYN. Default: 1e13.
   virtual void setMAXDYN_LUB(double value);
   /** Get the value of MAXDYN_LUB */
-  inline double getMAXDYN_LUB() const {return MAXDYN_LUB;}
+  inline double getMAXDYN_LUB() const { return MAXDYN_LUB; }
 
   /** Set the value of EPS_COEFF_LUB, epsilon for values of coefficients for 
       variables with absolute value of lower or upper bound larger than LUB;
       Default: 1e-13 */
   virtual void setEPS_COEFF_LUB(const double value);
   /** Get the value of EPS_COEFF_LUB */
-  inline double getEPS_COEFF_LUB() const {return EPS_COEFF_LUB;}
+  inline double getEPS_COEFF_LUB() const { return EPS_COEFF_LUB; }
 
   /** Set the value of MINVIOL, the minimum violation for the current 
       basic solution in a generated cut. Default: 1e-7 */
   virtual void setMINVIOL(double value);
   /** Get the value of MINVIOL */
-  inline double getMINVIOL() const {return MINVIOL;}
+  inline double getMINVIOL() const { return MINVIOL; }
 
   /** Set the value of USE_INTSLACKS. Default: 0 */
   virtual void setUSE_INTSLACKS(int value);
   /** Get the value of USE_INTSLACKS */
-  inline int getUSE_INTSLACKS() const {return USE_INTSLACKS;}
+  inline int getUSE_INTSLACKS() const { return USE_INTSLACKS; }
 
   /** Set the value of USE_CG2. Default: 0 */
   virtual void setUSE_CG2(int value);
   /** Get the value of USE_CG2 */
-  inline int getUSE_CG2() const {return USE_CG2;}
+  inline int getUSE_CG2() const { return USE_CG2; }
 
   /** Set the value of normIsZero, the threshold for considering a norm to be 
       0; Default: 1e-5 */
   virtual void setNormIsZero(const double value);
   /** Get the value of normIsZero */
-  inline double getNormIsZero() const {return normIsZero;}
+  inline double getNormIsZero() const { return normIsZero; }
 
   /** Set the value of minReduc, threshold for relative norm improvement for
    performing  a reduction; Default: 0.05 */
   virtual void setMinReduc(const double value);
   /// Get the value of minReduc
-  inline double getMinReduc() const {return minReduc;}
+  inline double getMinReduc() const { return minReduc; }
 
   /** Set the maximum allowed value for (mTab * mTab * CoinMax(mTab, nTab)) where 
       mTab is the number of rows used in the combinations and nTab is the 
@@ -152,59 +150,58 @@ public:
       maxTab makes the generator faster, but weaker. Default: 1e7. */
   virtual void setMaxTab(const double value);
   /// Get the value of maxTab
-  inline double getMaxTab() const {return maxTab_;}
+  inline double getMaxTab() const { return maxTab_; }
   //@}
 
   /**@name Constructors and destructors */
   //@{
-  /// Default constructor 
+  /// Default constructor
   CglRedSplitParam(const double lub = 1000.0,
-		   const double eps_elim = 1e-12,
-		   const double eps_relax_abs = 1e-8,
-		   const double eps_relax_rel = 0.0,
-		   const double max_dyn = 1e8,
-		   const double max_dyn_lub = 1e13,
-		   const double eps_coeff_lub = 1e-13,
-		   const double min_viol = 1e-7,
-		   const int use_int_slacks = 0,
-		   const int use_cg2 = 0,
-		   const double norm_zero = 1e-5,
-		   const double min_reduc = 0.05,
-		   const double away = 0.05,
-		   const double max_tab = 1e7);
+    const double eps_elim = 1e-12,
+    const double eps_relax_abs = 1e-8,
+    const double eps_relax_rel = 0.0,
+    const double max_dyn = 1e8,
+    const double max_dyn_lub = 1e13,
+    const double eps_coeff_lub = 1e-13,
+    const double min_viol = 1e-7,
+    const int use_int_slacks = 0,
+    const int use_cg2 = 0,
+    const double norm_zero = 1e-5,
+    const double min_reduc = 0.05,
+    const double away = 0.05,
+    const double max_tab = 1e7);
 
-   /// Constructor from CglParam
+  /// Constructor from CglParam
   CglRedSplitParam(const CglParam &source,
-		   const double lub = 1000.0,
-		   const double eps_elim = 1e-12,
-		   const double eps_relax_abs = 1e-8,
-		   const double eps_relax_rel = 0.0,
-		   const double max_dyn = 1e8,
-		   const double max_dyn_lub = 1e13,
-		   const double eps_coeff_lub = 1e-13,
-		   const double min_viol = 1e-7,
-		   const int use_int_slacks = 0,
-		   const int use_cg2 = 0,
-		   const double norm_zero = 1e-5,
-		   const double min_reduc = 0.05,
-		   const double away = 0.05,
-		   const double max_tab = 1e7);
+    const double lub = 1000.0,
+    const double eps_elim = 1e-12,
+    const double eps_relax_abs = 1e-8,
+    const double eps_relax_rel = 0.0,
+    const double max_dyn = 1e8,
+    const double max_dyn_lub = 1e13,
+    const double eps_coeff_lub = 1e-13,
+    const double min_viol = 1e-7,
+    const int use_int_slacks = 0,
+    const int use_cg2 = 0,
+    const double norm_zero = 1e-5,
+    const double min_reduc = 0.05,
+    const double away = 0.05,
+    const double max_tab = 1e7);
 
-  /// Copy constructor 
+  /// Copy constructor
   CglRedSplitParam(const CglRedSplitParam &source);
 
   /// Clone
-  virtual CglRedSplitParam* clone() const;
+  virtual CglRedSplitParam *clone() const;
 
-  /// Assignment operator 
-  virtual CglRedSplitParam& operator=(const CglRedSplitParam &rhs);
+  /// Assignment operator
+  virtual CglRedSplitParam &operator=(const CglRedSplitParam &rhs);
 
-  /// Destructor 
+  /// Destructor
   virtual ~CglRedSplitParam();
   //@}
 
 protected:
-
   /**@name Parameters */
   //@{
 
@@ -214,7 +211,7 @@ protected:
 
   /** Epsilon for value of coefficients when eliminating slack variables. 
       Default: 1e-12. */
-   double EPS_ELIM;
+  double EPS_ELIM;
 
   /** Value added to the right hand side of each generated cut to relax it.
       Default: 1e-8 */
@@ -225,11 +222,11 @@ protected:
       Default: 0 */
   double EPS_RELAX_REL;
 
-  // Maximum ratio between largest and smallest non zero 
+  // Maximum ratio between largest and smallest non zero
   // coefficients in a cut. Default: 1e8.
   double MAXDYN;
 
-  // Maximum ratio between largest and smallest non zero 
+  // Maximum ratio between largest and smallest non zero
   // coefficients in a cut involving structural variables with
   // lower or upper bound in absolute value larger than LUB.
   // Should logically be larger or equal to MAXDYN. Default: 1e13.
@@ -246,7 +243,7 @@ protected:
   /// Use integer slacks to generate cuts if USE_INTSLACKS = 1. Default: 0.
   int USE_INTSLACKS;
 
-  /// Use second way to generate a mixed integer Gomory cut 
+  /// Use second way to generate a mixed integer Gomory cut
   /// (see methods generate_cgcut()) and generate_cgcut_2()). Default: 0.
   int USE_CG2;
 
@@ -254,15 +251,15 @@ protected:
   /// Default: 1e-5.
   double normIsZero;
 
-  /// Minimum reduction in percent that must be achieved by a potential 
+  /// Minimum reduction in percent that must be achieved by a potential
   /// reduction step in order to be performed; Between 0 and 1, default: 0.05.
   double minReduc;
 
-  /// Use row only if pivot variable should be integer but is more 
+  /// Use row only if pivot variable should be integer but is more
   /// than away_ from being integer.
   double away_;
-  
-  /// Maximum value for (mTab * mTab * CoinMax(mTab, nTab)). See method 
+
+  /// Maximum value for (mTab * mTab * CoinMax(mTab, nTab)). See method
   /// setMaxTab().
   double maxTab_;
 
