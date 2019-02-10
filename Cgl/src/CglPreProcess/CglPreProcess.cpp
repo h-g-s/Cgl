@@ -554,6 +554,8 @@ static int makeIntegers2(OsiSolverInterface *model, int mode)
     }
     // do if some but not too many
     if (nNew && nNew < currentNumber) {
+      double tolerance;
+      model->getDblParam(OsiPrimalTolerance, tolerance);
       for (int i = 0; i < nNew; i++) {
         int iColumn = newInts[i];
         double objValue = objective[iColumn];
@@ -569,6 +571,9 @@ static int makeIntegers2(OsiSolverInterface *model, int mode)
         }
         if (thisGood && upper[iColumn] < lower[iColumn] + 10.0) {
           model->setInteger(iColumn);
+          // clean up bounds
+          model->setColLower(iColumn, ceil(lower[iColumn] - tolerance));
+          model->setColUpper(iColumn, floor(upper[iColumn] + tolerance));
           if (objValue)
             numberNonZero++;
           else
@@ -1647,7 +1652,7 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
     delete[] mark;
     if (numberSOS) {
       if (makeEquality == 2) {
-        if (numberOverlap || numberIntegers > numberInSOS + 1) {
+        if (numberOverlap || numberIntegers * 4 > numberInSOS * 5 + 1) {
           handler_->message(CGL_PROCESS_SOS2, messages_)
             << numberSOS << numberInSOS << numberIntegers << numberOverlap
             << CoinMessageEol;
@@ -1816,7 +1821,7 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
         << numberFixed
         << CoinMessageEol;
   }
-  if (numberSlacks && makeEquality && !justOnesWithObj) {
+  if (numberSlacks && makeEquality == 2 && !justOnesWithObj) {
     handler_->message(CGL_SLACKS, messages_)
       << numberSlacks
       << CoinMessageEol;
@@ -1825,19 +1830,57 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
     if (!startModel_) {
       startModel_ = originalModel_->clone();
     }
+    CoinBigIndex *starts = new CoinBigIndex[numberSlacks + 1];
+    double *loweretc = new double[3 * numberSlacks];
+    double *upperetc = loweretc + numberSlacks;
+    double *objetc = upperetc + numberSlacks;
     for (int i = 0; i < numberSlacks; i++) {
       int iRow = rows[i];
-      double value = element[i];
-      double lowerValue = 0.0;
       double upperValue = 1.0;
-      double objValue = 0.0;
       if (iRow >= numberRows) {
         // just a slack not a clique
         upperValue = COIN_DBL_MAX;
         iRow -= numberRows;
       }
-      CoinPackedVector column(1, &iRow, &value);
-      startModel_->addCol(column, lowerValue, upperValue, objValue);
+      rows[i] = iRow;
+      loweretc[i] = 0.0;
+      upperetc[i] = upperValue;
+      objetc[i] = 0.0;
+      starts[i] = i;
+    }
+    starts[numberSlacks] = numberSlacks;
+    startModel_->addCols(numberSlacks, starts, rows, element,
+      loweretc, upperetc, objetc);
+    delete[] starts;
+    delete[] loweretc;
+    CoinWarmStartBasis *basis = dynamic_cast< CoinWarmStartBasis * >(startModel_->getWarmStart());
+    if (basis) {
+      const double *rowActivity = startModel_->getRowActivity();
+      double *solution = CoinCopyOfArray(startModel_->getColSolution(),
+        numberColumns + numberSlacks);
+      for (int i = 0; i < numberSlacks; i++) {
+        int iRow = rows[i];
+        if (basis->getArtifStatus(iRow) == CoinWarmStartBasis::basic) {
+          basis->setArtifStatus(iRow, CoinWarmStartBasis::atLowerBound);
+          basis->setStructStatus(i + numberColumns, CoinWarmStartBasis::basic);
+        }
+        double value = element[i];
+        double slackvalue = rowActivity[iRow];
+        if (value > 0) {
+          slackvalue = rowUpper[iRow] - slackvalue;
+        } else {
+          slackvalue = slackvalue - rowLower[iRow];
+        }
+        solution[i + numberColumns] = slackvalue;
+      }
+      startModel_->setWarmStart(basis);
+      startModel_->setColSolution(solution);
+      delete basis;
+      delete[] solution;
+    }
+    for (int i = 0; i < numberSlacks; i++) {
+      int iRow = rows[i];
+      double value = element[i];
       // set integer
       startModel_->setInteger(numberColumns + i);
       if (value > 0)
@@ -1988,7 +2031,7 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
             printf("ZZZ on col %d move %g offset %g\n",
               jColumn, move, move * rhs);
 #endif
-          offset -= move * multiply * rhs;
+          offset += move * multiply * rhs;
           for (CoinBigIndex j = rowStart[iRow]; j < rowStart[iRow] + rowLength[iRow]; j++) {
             int iColumn = column[j];
             if (iColumn != jColumn) {
@@ -2037,7 +2080,7 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
     //if (allPlusOnes)
     //presolveActions |= 2;
     // allow transfer of costs
-    // presolveActions |= 4;
+    //presolveActions |= 4; can be slow
     // If trying for SOS don't allow some transfers
     if (makeEquality == 2 || makeEquality == 3)
       presolveActions |= 8;
@@ -2060,6 +2103,34 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
     presolvedModel = pinfo->presolvedModel(*oldModel, feasibilityTolerance, true, 5, prohibited_, keepSolution, rowType_);
     oldModel->messageHandler()->setLogLevel(saveLogLevel);
     if (presolvedModel) {
+      //#define MAKE_LESS_THAN
+#ifdef MAKE_LESS_THAN
+      {
+        int numberRows = presolvedModel->getNumRows();
+        int numberColumns = presolvedModel->getNumCols();
+        CoinPackedMatrix *matrix = presolvedModel->getMutableMatrixByCol();
+        const int *row = matrix->getIndices();
+        const CoinBigIndex *columnStart = matrix->getVectorStarts();
+        const int *columnLength = matrix->getVectorLengths();
+        double *element = const_cast< double * >(matrix->getElements());
+        const double *rowLower = presolvedModel->getRowLower();
+        const double *rowUpper = presolvedModel->getRowUpper();
+        for (int iColumn = 0; iColumn < numberColumns; iColumn++) {
+          for (CoinBigIndex j = columnStart[iColumn];
+               j < columnStart[iColumn] + columnLength[iColumn]; j++) {
+            int iRow = row[j];
+            if (rowUpper[iRow] == COIN_DBL_MAX)
+              element[j] = -element[j];
+          }
+        }
+        for (int iRow = 0; iRow < numberRows; iRow++) {
+          if (rowUpper[iRow] == COIN_DBL_MAX) {
+            presolvedModel->setRowUpper(iRow, -rowLower[iRow]);
+            presolvedModel->setRowLower(iRow, -COIN_DBL_MAX);
+          }
+        }
+      }
+#endif
       presolvedModel->messageHandler()->setLogLevel(saveLogLevel);
       //presolvedModel->writeMps("new");
       writeDebugMps(presolvedModel, "ordinary", pinfo);
@@ -2365,6 +2436,8 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
         presolveActions = 1 + 16;
       else
         presolveActions = 16; // actually just switch off duplicate columns for ints
+      if ((tuning & 32) != 0)
+	presolveActions |= 32;
       // Do not allow all +1 to be tampered with
       //if (allPlusOnes)
       //presolveActions |= 2;
@@ -2940,7 +3013,7 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
     //exit(2);
   }
 #endif
-  writeDebugMps(returnModel, "returnModel", NULL);
+  //writeDebugMps(returnModel, "returnModel", NULL);
 #if CGL_WRITEMPS
   if (debugger)
     assert(returnModel->getRowCutDebugger());
@@ -2995,8 +3068,18 @@ CglPreProcess::preProcessNonDefault(OsiSolverInterface &model,
         }
       }
     }
+
+
+
   }
   /*-------------------------------*/
+
+  if (returnModel != &model && keepColumnNames_)
+  {
+    returnModel->setIntParam( OsiNameDiscipline, 1 );
+    for ( int i=0 ; (i<returnModel->getNumCols()) ; i++ )
+      returnModel->setColName( i, model.getColName( originalColumns()[i] ) );
+  }
 
   return returnModel;
 }
@@ -5167,7 +5250,8 @@ CglPreProcess::modified(OsiSolverInterface *model,
           int saveMaxElements = probingCut->getMaxElementsRoot();
           int saveMaxProbe = probingCut->getMaxProbeRoot();
           int saveMaxLook = probingCut->getMaxLookRoot();
-          if (!iBigPass && !iPass && (options_ & (16 | 64)) != 0) {
+	  if ((!iBigPass||(options_&64)!=0)&&!iPass&&(options_&(16|64))!=0) {
+	    //if (/*!iBigPass &&*/ !iPass /*&&(options_&(16|64))!=0*/) {
             noStrengthening = true;
             numberPasses = 1;
             probingCut->setMaxProbeRoot(CoinMax(saveMaxProbe, 1000));
@@ -5375,9 +5459,26 @@ CglPreProcess::modified(OsiSolverInterface *model,
       // check changes
       // first are any rows strengthened by cuts
       int iRow;
+#ifdef MAX_ADD_ELEMENTS_PREPROCESS
+      const CoinPackedMatrix *tempRowCopy = newModel->getMatrixByRow();
+      const int *tempRowLength = tempRowCopy->getVectorLengths();
+#endif
       for (iRow = 0; iRow < numberRows; iRow++) {
-        if (whichCut[iRow])
+        if (whichCut[iRow]) {
+#ifdef MAX_ADD_ELEMENTS_PREPROCESS
+          OsiRowCut *thisCut = whichCut[iRow];
+          CoinPackedVector row = thisCut->row();
+          if (row.getNumElements() <= tempRowLength[iRow]
+              + MAX_ADD_ELEMENTS_PREPROCESS) {
+            numberStrengthened++;
+          } else {
+            delete thisCut;
+            whichCut[iRow] = NULL;
+          }
+#else
           numberStrengthened++;
+#endif
+        }
       }
       // Also can we get rid of duplicate rows
       int numberDrop = 0;
@@ -8026,3 +8127,6 @@ double CglPreProcess::getCurrentCPUTime() const
 }
 
 // # vim: ts=2 sw=2 et
+
+/* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2
+*/
