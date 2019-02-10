@@ -46,9 +46,5 @@ public:
 
 #endif
 
-<<<<<<< HEAD
-// # vim: ts=2 sw=2 et
-=======
 /* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2
 */
->>>>>>> ba4130debc033f8c9f75f1e01a058020ea053992
