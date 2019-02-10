@@ -87,3 +87,6 @@ CglParam &CglParam::operator=(const CglParam &rhs)
 CglParam::~CglParam()
 {
 }
+
+/* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2
+*/

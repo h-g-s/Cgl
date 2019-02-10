@@ -388,3 +388,6 @@ CglStored::bestObjective() const
   else
     return COIN_DBL_MAX;
 }
+
+/* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2
+*/

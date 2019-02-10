@@ -5,7 +5,7 @@
 //           email: fmargot@andrew.cmu.edu
 // Date:     11/24/06
 //
-// $Id$
+// $Id: CglParam.hpp 1442 2019-01-06 16:39:41Z unxusr $
 //
 // This code is licensed under the terms of the Eclipse Public License (EPL).
 //-----------------------------------------------------------------------------
@@ -88,3 +88,6 @@ protected:
 };
 
 #endif
+
+/* vi: softtabstop=2 shiftwidth=2 expandtab tabstop=2
+*/
