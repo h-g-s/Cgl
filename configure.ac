@@ -84,14 +84,15 @@ if test $coin_has_coinutils != yes ; then
   AC_MSG_ERROR([Required package CoinUtils not available.])
 fi
 
-AC_COIN_CHK_PKG(Osi,[CglLib CglUnitTest])
-if test $coin_has_osi != yes ; then
-  AC_MSG_ERROR([Required package Osi not available.])
-fi
-
 # Clp can be used by CglLandP, and also by the unitTest.
 AC_COIN_CHK_PKG(Clp,[CglLib CglUnitTest],[clp])
+if test $coin_has_clp != yes ; then
+  AC_MSG_ERROR([Required package Clp not available.])
+fi
 AC_COIN_CHK_PKG(OsiClp,[CglLib CglUnitTest],[osi-clp])
+if test $coin_has_osiclp != yes ; then
+  AC_MSG_ERROR([Required package OsiClp not available.])
+fi
 
 # Finalize libs and cflags for building CglLib components, then add one
 # last component to access header files in CglCommon. This should be absolute
@@ -105,20 +106,6 @@ CGLLIB_CFLAGS="-I\$(top_srcdir)/src/CglCommon $CGLLIB_CFLAGS"
 #                       Solvers for unittesting                             #
 #############################################################################
 
-# These are not required for the compilation of Cgl, but we need to
-# know which are available in order to compile the unitTest correctly. The
-# CglUnitTest unit is simply a convenient handle, allowing us to accumulate
-# linker and compiler flags in a single variable.
-
-AC_COIN_CHK_PKG(OsiCpx,[CglUnitTest],[osi-cplex])
-AC_COIN_CHK_PKG(OsiGlpk,[CglUnitTest],[osi-glpk])
-AC_COIN_CHK_PKG(OsiGrb,[CglUnitTest],[osi-gurobi])
-AC_COIN_CHK_PKG(OsiMsk,[CglUnitTest],[osi-mosek])
-AC_COIN_CHK_PKG(OsiXpr,[CglUnitTest],[osi-xpress])
-AC_COIN_CHK_PKG(OsiVol,[CglUnitTest],[osi-vol])
-AC_COIN_CHK_PKG(OsiDyLP,[CglUnitTest],[osi-dylp])
-AC_COIN_CHK_PKG(OsiSpx,[CglUnitTest],[osi-soplex])
-
 AC_COIN_FINALIZE_FLAGS(CglUnitTest)
 
 # We just need the COIN_HAS_SAMPLE and SAMPLE_DATA variables for Sample.
@@ -130,7 +117,7 @@ AC_COIN_CHK_PKG(Sample,,[coindatasample],,dataonly)
 #                  Check for doxygen                                        #
 #############################################################################
 
-AC_COIN_DOXYGEN([CoinUtils Osi Clp])
+AC_COIN_DOXYGEN([CoinUtils Clp])
 
 ##############################################################################
 #                   Finishing up by writing all the output                   #

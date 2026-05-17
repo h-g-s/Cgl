@@ -12,35 +12,8 @@
 /* Define to 1 if CoinUtils is available. */
 #undef CGL_HAS_COINUTILS
 
-/* Define to 1 if Osi is available. */
-#undef CGL_HAS_OSI
-
 /* Define to 1 if OsiClp is available. */
 #undef CGL_HAS_OSICLP
-
-/* Define to 1 if OsiCpx is available. */
-#undef CGL_HAS_OSICPX
-
-/* Define to 1 if OsiDyLP is available. */
-#undef CGL_HAS_OSIDYLP
-
-/* Define to 1 if OsiGlpk is available. */
-#undef CGL_HAS_OSIGLPK
-
-/* Define to 1 if OsiGrb is available. */
-#undef CGL_HAS_OSIGRB
-
-/* Define to 1 if OsiMsk is available. */
-#undef CGL_HAS_OSIMSK
-
-/* Define to 1 if OsiSpx is available. */
-#undef CGL_HAS_OSISPX
-
-/* Define to 1 if OsiVol is available. */
-#undef CGL_HAS_OSIVOL
-
-/* Define to 1 if OsiXpr is available. */
-#undef CGL_HAS_OSIXPR
 
 /* Define to 1 if Sample is available. */
 #undef CGL_HAS_SAMPLE
